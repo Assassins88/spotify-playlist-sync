@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spotify Playlist Sync - n8n Workflow Guide</title>
+    <style>
+        :root {
+            --color-primary: #1DB954;
+            --color-primary-hover: #1ed760;
+            --color-bg: #121212;
+            --color-surface: #1e1e1e;
+            --color-text: #ffffff;
+            --color-text-secondary: #b3b3b3;
+            --color-border: #282828;
+            --color-danger: #e74c3c;
+            --color-warning: #f39c12;
+            --color-success: #27ae60;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--color-bg);
+            color: var(--color-text);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            border-bottom: 2px solid var(--color-border);
+            padding-bottom: 20px;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            color: var(--color-primary);
+            margin-bottom: 10px;
+        }
+
+        header p {
+            color: var(--color-text-secondary);
+            font-size: 1.1em;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            border-bottom: 1px solid var(--color-border);
+            flex-wrap: wrap;
+        }
+
+        .tab-button {
+            background: none;
+            border: none;
+            color: var(--color-text-secondary);
+            padding: 12px 20px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -1px;
+        }
+
+        .tab-button.active {
+            color: var(--color-primary);
+            border-bottom-color: var(--color-primary);
+        }
+
+        .tab-button:hover {
+            color: var(--color-text);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .section {
+            background-color: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .section h2 {
+            color: var(--color-primary);
+            margin-bottom: 15px;
+            font-size: 1.4em;
+        }
+
+        .section h3 {
+            color: var(--color-text);
+            margin-top: 15px;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .code-block {
+            background-color: #0a0a0a;
+            border: 1px solid var(--color-border);
+            border-radius: 6px;
+            padding: 15px;
+            margin: 15px 0;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            color: #00ff00;
+        }
+
+        .step {
+            background-color: #0a0a0a;
+            border-left: 4px solid var(--color-primary);
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+
+        .step strong {
+            color: var(--color-primary);
+        }
+
+        .warning {
+            background-color: rgba(243, 156, 18, 0.1);
+            border-left: 4px solid var(--color-warning);
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+            color: #ffc107;
+        }
+
+        .success {
+            background-color: rgba(39, 174, 96, 0.1);
+            border-left: 4px solid var(--color-success);
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+            color: #27ae60;
+        }
+
+        .danger {
+            background-color: rgba(231, 76, 60, 0.1);
+            border-left: 4px solid var(--color-danger);
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+            color: #e74c3c;
+        }
+
+        ul, ol {
+            margin: 15px 0 15px 20px;
+        }
+
+        li {
+            margin: 8px 0;
+        }
+
+        .node-structure {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .node-card {
+            background-color: #0a0a0a;
+            border: 2px solid var(--color-primary);
+            border-radius: 6px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .node-card .node-number {
+            background-color: var(--color-primary);
+            color: var(--color-bg);
+            border-radius: 50%;
+            width: 35px;
+            height: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin: 0 auto 10px;
+            font-size: 1.2em;
+        }
+
+        .node-card h4 {
+            color: var(--color-primary);
+            margin-bottom: 10px;
+        }
+
+        .node-card p {
+            color: var(--color-text-secondary);
+            font-size: 0.9em;
+            margin: 0;
+        }
+
+        button {
+            background-color: var(--color-primary);
+            color: var(--color-bg);
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.3s ease;
+            margin: 10px 5px 10px 0;
+        }
+
+        button:hover {
+            background-color: var(--color-primary-hover);
+        }
+
+        .json-template {
+            background-color: #0a0a0a;
+            border: 1px solid var(--color-border);
+            border-radius: 6px;
+            padding: 15px;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+            color: #00d4ff;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .copy-btn {
+            background-color: var(--color-primary);
+            color: var(--color-bg);
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+            margin-top: 10px;
+        }
+
+        .copy-btn:hover {
+            background-color: var(--color-primary-hover);
+        }
+
+        .comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .comparison-card {
+            background-color: #0a0a0a;
+            border: 1px solid var(--color-border);
+            border-radius: 6px;
+            padding: 15px;
+        }
+
+        .comparison-card h4 {
+            color: var(--color-primary);
+            margin-bottom: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .comparison {
+                grid-template-columns: 1fr;
+            }
+            header h1 {
+                font-size: 1.8em;
+            }
+            .tabs {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎵 Spotify Playlist Sync</h1>
+            <p>n8n Workflow zur Synchronisierung zweier Playlisten</p>
+        </header>
+
+        <div class="tabs">
+            <button class="tab-button active" onclick="switchTab('overview')">📋 Übersicht</button>
+            <button class="tab-button" onclick="switchTab('setup')">⚙️ Setup</button>
+            <button class="tab-button" onclick="switchTab('workflow')">🔄 Workflow</button>
+            <button class="tab-button" onclick="switchTab('advanced')">🚀 Erweitert</button>
+            <button class="tab-button" onclick="switchTab('troubleshooting')">🐛 Troubleshooting</button>
+        </div>
+
+        <!-- OVERVIEW TAB -->
+        <div id="overview" class="tab-content active">
+            <div class="section">
+                <h2>Workflow-Übersicht</h2>
+                <p>Dieser Workflow synchronisiert deine zwei Playlisten bidirektional:</p>
+                <ul>
+                    <li><strong>Lieblingssongs</strong> (Master-Playlist 1)</li>
+                    <li><strong>Lieblingssongs 2</strong> (Master-Playlist 2)</li>
+                </ul>
+
+                <h3>Was wird synchronisiert?</h3>
+                <div class="node-structure">
+                    <div class="node-card">
+                        <div class="node-number">✓</div>
+                        <h4>Neue Tracks</h4>
+                        <p>Tracks aus P1 werden zu P2 hinzugefügt</p>
+                    </div>
+                    <div class="node-card">
+                        <div class="node-number">✓</div>
+                        <h4>Duplikate</h4>
+                        <p>Keine Duplikate, intelligente Deduplication</p>
+                    </div>
+                    <div class="node-card">
+                        <div class="node-number">✓</div>
+                        <h4>Bidirektional</h4>
+                        <p>P1 ↔ P2 automatische Synchronisierung</p>
+                    </div>
+                    <div class="node-card">
+                        <div class="node-number">✓</div>
+                        <h4>Automatisch</h4>
+                        <p>Kann per Schedule oder manuell ausgelöst werden</p>
+                    </div>
+                </div>
+
+                <h3>Workflow-Logik</h3>
+                <ol>
+                    <li>Alle Tracks aus Playlist 1 abrufen</li>
+                    <li>Alle Tracks aus Playlist 2 abrufen</li>
+                    <li>Vergleichen und Unterschiede finden</li>
+                    <li>Fehlende Tracks hinzufügen</li>
+                    <li>Duplikate entfernen (optional)</li>
+                </ol>
+            </div>
+        </div>
+
+        <!-- SETUP TAB -->
+        <div id="setup" class="tab-content">
+            <div class="section">
+                <h2>1. Spotify API Setup</h2>
+                <div class="step">
+                    <strong>Schritt 1:</strong> Gehe zu <a href="https://developer.spotify.com/dashboard" target="_blank" style="color: var(--color-primary);">developer.spotify.com/dashboard</a>
+                </div>
+                <div class="step">
+                    <strong>Schritt 2:</strong> Melde dich mit deinem Spotify-Account an (oder registriere dich)
+                </div>
+                <div class="step">
+                    <strong>Schritt 3:</strong> Akzeptiere die Developer Terms und erstelle eine App
+                </div>
+                <div class="step">
+                    <strong>Schritt 4:</strong> Gib der App einen Namen (z.B. "Playlist Sync")
+                </div>
+                <div class="step">
+                    <strong>Schritt 5:</strong> Kopiere die <strong>Client ID</strong> und <strong>Client Secret</strong>
+                </div>
+
+                <h3>OAuth Redirect URI konfigurieren</h3>
+                <p>In deiner Spotify App → Edit Settings:</p>
+                <div class="code-block">
+https://n8n.io/oauth2-credential/callback
+                </div>
+                <p style="color: var(--color-text-secondary); font-size: 0.9em; margin-top: 10px;">Oder deine n8n Instanz URL:</p>
+                <div class="code-block">
+https://deine-n8n-domain.com/rest/oauth2-credential/callback
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>2. n8n Credentials Setup</h2>
+                <div class="step">
+                    <strong>In n8n:</strong> Gehe zu Credentials und erstelle neue Spotify OAuth2 Credentials
+                </div>
+                <div class="step">
+                    <strong>Gib ein:</strong> Client ID und Client Secret von Spotify
+                </div>
+                <div class="step">
+                    <strong>Klicke:</strong> "Connect my account" und authentifiziere dich
+                </div>
+                <div class="warning">
+                    <strong>⚠️ Wichtig:</strong> Die Scopes müssen folgende Berechtigungen enthalten:
+                    <ul>
+                        <li>playlist-modify-public</li>
+                        <li>playlist-modify-private</li>
+                        <li>playlist-read-private</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>3. Playlist IDs finden</h2>
+                <p>Du brauchst die Spotify Playlist IDs. So findest du sie:</p>
+                <ol>
+                    <li>Öffne deine Playlist in Spotify (Web oder App)</li>
+                    <li>Klicke auf "Teilen" → "Link kopieren"</li>
+                    <li>Der Link sieht so aus: <code>https://open.spotify.com/playlist/<strong>ID</strong></code></li>
+                    <li>Kopiere die ID (lange Zeichenkette nach "playlist/")</li>
+                </ol>
+                <div class="example-code">
+                    <p><strong>Beispiel:</strong></p>
+                    <div class="code-block">
+Lieblingssongs ID: 3cEYpjA9oz9GiPac4AsH4n
+Lieblingssongs 2 ID: 7kT8RMh3xC5qW9vD2jX6mZ
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- WORKFLOW TAB -->
+        <div id="workflow" class="tab-content">
+            <div class="section">
+                <h2>Workflow-Struktur</h2>
+                <div class="node-structure">
+                    <div class="node-card">
+                        <div class="node-number">1</div>
+                        <h4>Trigger</h4>
+                        <p>Manual / Cron / Webhook</p>
+                    </div>
+                    <div class="node-card">
+                        <div class="node-number">2</div>
+                        <h4>Get Playlist 1</h4>
+                        <p>Tracks von "Lieblingssongs" abrufen</p>
+                    </div>
+                    <div class="node-card">
+                        <div class="node-number">3</div>
+                        <h4>Get Playlist 2</h4>
+                        <p>Tracks von "Lieblingssongs 2" abrufen</p>
+                    </div>
+                    <div class="node-card">
+                        <div class="node-number">4</div>
+                        <h4>Code Node</h4>
+                        <p>Vergleich & Dedup</p>
+                    </div>
+                    <div class="node-card">
+                        <div class="node-number">5</div>
+                        <h4>Add to P1</h4>
+                        <p>Fehlende Tracks zu P1</p>
+                    </div>
+                    <div class="node-card">
+                        <div class="node-number">6</div>
+                        <h4>Add to P2</h4>
+                        <p>Fehlende Tracks zu P2</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>Node-Details</h2>
+
+                <h3>1️⃣ Trigger Node</h3>
+                <p><strong>Type:</strong> Manual Trigger oder Schedule</p>
+                <p style="color: var(--color-text-secondary); margin-top: 10px;">Optionen:</p>
+                <ul>
+                    <li><strong>Manual:</strong> Klick zum Ausführen</li>
+                    <li><strong>Daily:</strong> Jeden Tag um 3 Uhr nachts</li>
+                    <li><strong>Weekly:</strong> Sonntag Morgens</li>
+                </ul>
+
+                <h3>2️⃣ & 3️⃣ Spotify Get Nodes</h3>
+                <p><strong>Type:</strong> Spotify → Playlist → Get Tracks</p>
+                <div class="step">
+                    <strong>Konfiguration:</strong>
+                    <ul>
+                        <li>Authentifizierung: Deine Spotify Credentials</li>
+                        <li>Playlist ID: ID aus Setup notieren</li>
+                        <li>Get all: ON (für alle Tracks, >100)</li>
+                    </ul>
+                </div>
+
+                <h3>4️⃣ Merge Node</h3>
+                <p><strong>Type:</strong> Merge (Merge Data)</p>
+                <p style="color: var(--color-text-secondary); margin-top: 10px;">Kombiniert die Outputs von Node 2 und Node 3, um beide Playlisten gleichzeitig zu verarbeiten:</p>
+                <div class="step">
+                    <strong>Konfiguration:</strong>
+                    <ul>
+                        <li>Mode: <strong>Append</strong> (nicht Combine!)</li>
+                        <li>Output Data From: <strong>Both Inputs Merged Together</strong></li>
+                        <li>Verbinde Node 2 und Node 3 mit der Merge Node</li>
+                    </ul>
+                </div>
+                <div class="warning">
+                    <strong>⚠️ Wichtig:</strong> Die Merge Node wird benötigt, weil Node 2 und 3 parallel laufen. Sie kombiniert alle Items von beiden Playlisten in eine Liste.
+                </div>
+
+                <h3>5️⃣ Code Node (Logik)</h3>
+                <p><strong>Type:</strong> Code Node (JavaScript)</p>
+                <p style="color: var(--color-text-secondary); margin-top: 10px;">Dieser Node vergleicht die Playlisten mit der Merge Node und findet Unterschiede. Passe die Splitpunkte (split1 und split2) an deine Playlistgrößen an:</p>
+
+                <div class="json-template">
+// ✅ FÜR MERGE NODE - Append Mode
+const allItems = $input.all();
+
+console.log("Total items:", allItems.length);
+
+// Die Merge Node kombiniert ALLE Items
+// Passe diese Werte an deine Playlistgrößen an:
+// split1 = Anzahl der Tracks in Playlist 1
+// split2 = Anzahl der Tracks in Playlist 2
+
+const split1 = 100;  // HIER: Anzahl Playlist 1 Tracks anpassen
+const split2 = 150;  // HIER: Anzahl Playlist 2 Tracks anpassen
+
+const p1Items = allItems.slice(0, split1);
+const p2Items = allItems.slice(split1);
+
+console.log("P1 Items:", p1Items.length);
+console.log("P2 Items:", p2Items.length);
+
+// Extract URIs - Die Items haben track.uri
+const p1URIs = p1Items
+  .map(item => item?.json?.track?.uri)
+  .filter(Boolean);
+
+const p2URIs = p2Items
+  .map(item => item?.json?.track?.uri)
+  .filter(Boolean);
+
+console.log("P1 URIs extracted:", p1URIs.length);
+console.log("P2 URIs extracted:", p2URIs.length);
+
+// Filter out local tracks (spotify:local:...)
+const tracksToAddToP2Unfiltered = p1URIs.filter(uri => !p2URIs.includes(uri));
+const tracksToAddToP1Unfiltered = p2URIs.filter(uri => !p1URIs.includes(uri));
+
+const tracksToAddToP2 = tracksToAddToP2Unfiltered.filter(uri => !uri.includes("spotify:local"));
+const tracksToAddToP1 = tracksToAddToP1Unfiltered.filter(uri => !uri.includes("spotify:local"));
+
+return {
+  tracksToAddToP2: tracksToAddToP2,
+  tracksToAddToP1: tracksToAddToP1,
+  syncStatus: {
+    p1Total: p1URIs.length,
+    p2Total: p2URIs.length,
+    newForP2: tracksToAddToP2.length,
+    newForP1: tracksToAddToP1.length,
+    p1LocalTracksSkipped: tracksToAddToP1Unfiltered.length - tracksToAddToP1.length,
+    p2LocalTracksSkipped: tracksToAddToP2Unfiltered.length - tracksToAddToP2.length
+  }
+};
+                </div>
+
+                <h3>⚠️ Wichtig: Lokale Tracks filtern</h3>
+                <div class="danger">
+                    <strong>🚨 Lokale Tracks können NICHT zu Playlisten hinzugefügt werden!</strong>
+                    <ul>
+                        <li><strong>Lokale Tracks:</strong> Beginnen mit <code>spotify:local:...</code></li>
+                        <li><strong>Problem:</strong> Spotify API akzeptiert nur Spotify-Tracks</li>
+                        <li><strong>Lösung:</strong> Automatisch gefiltert mit <code>.filter(uri => !uri.includes("spotify:local"))</code></li>
+                        <li><strong>Resultat:</strong> Nur echte Spotify-Tracks werden hinzugefügt</li>
+                    </ul>
+                </div>
+
+                <h3>6️⃣ & 7️⃣ Add Item Nodes</h3>
+                <p><strong>Type:</strong> Spotify → Playlist → Add Item(s) to Playlist</p>
+                <p style="color: var(--color-text-secondary); margin-top: 10px;">Diese Nodes fügen die fehlenden (und gefilterten) Tracks zu den jeweiligen Playlisten hinzu:</p>
+                <div class="step">
+                    <strong>Node 6 (Add to Playlist 1):</strong>
+                    <ul>
+                        <li>Playlist ID: Deine erste Playlist ID</li>
+                        <li>Track URIs: <code>{{ $("Code").json.tracksToAddToP1.join(",") }}</code></li>
+                    </ul>
+                </div>
+                <div class="step">
+                    <strong>Node 7 (Add to Playlist 2):</strong>
+                    <ul>
+                        <li>Playlist ID: Deine zweite Playlist ID</li>
+                        <li>Track URIs: <code>{{ $("Code").json.tracksToAddToP2.join(",") }}</code></li>
+                    </ul>
+                </div>
+                <div class="success">
+                    ✅ <strong>Nur Spotify-Tracks:</strong> Lokale Tracks wurden bereits gefiltert und werden übersprungen
+                </div>
+            </div>
+        </div>
+
+        <!-- ADVANCED TAB -->
+        <div id="advanced" class="tab-content">
+            <div class="section">
+                <h2>Erweiterte Funktionen</h2>
+
+                <h3>1. Duplikate entfernen</h3>
+                <p>Wenn deine Playlist Duplikate enthält:</p>
+                <div class="json-template">
+const tracks = $input.all()[0].json.body.items || [];
+const seen = new Set();
+const duplicates = [];
+
+tracks.forEach(item => {
+  const uri = item.track.uri;
+  if (seen.has(uri)) {
+    duplicates.push({
+      uri: uri,
+      name: item.track.name,
+      artist: item.track.artists[0].name
+    });
+  }
+  seen.add(uri);
+});
+
+return {
+  totalTracks: tracks.length,
+  duplicateCount: duplicates.length,
+  duplicates: duplicates,
+  uniqueTracks: Array.from(seen).length
+};
+                </div>
+
+                <h3>2. Logging & Notifications</h3>
+                <p>Füge einen Slack/Email Node hinzu für Benachrichtigungen:</p>
+                <div class="step">
+                    <strong>Nach dem Sync:</strong> Slack Message mit Status
+                    <ul>
+                        <li>Tracks hinzugefügt</li>
+                        <li>Duplikate entfernt</li>
+                        <li>Fehler (falls vorhanden)</li>
+                    </ul>
+                </div>
+
+                <h3>3. Batch Processing</h3>
+                <p>Spotify API hat Limits (100 Tracks pro Request). Für große Playlisten:</p>
+                <div class="json-template">
+// Chunk array into batches of 100
+const chunkArray = (arr, size) => {
+  const chunks = [];
+  for (let i = 0; i < arr.length; i += size) {
+    chunks.push(arr.slice(i, i + size));
+  }
+  return chunks;
+};
+
+const batches = chunkArray(tracksToAdd, 100);
+return batches;
+                </div>
+
+                <h3>4. Scheduling</h3>
+                <p>Automatische Synchronisierung konfigurieren:</p>
+                <ul>
+                    <li>Workflow Settings → Trigger</li>
+                    <li>Cron: <code>0 3 * * *</code> (Täglich 3 Uhr)</li>
+                    <li>Oder: Jede Stunde, jeden Tag, etc.</li>
+                </ul>
+
+                <h3>5. Error Handling</h3>
+                <p>Fehlerbehandlung mit Try-Catch:</p>
+                <div class="json-template">
+try {
+  // Sync logic
+  const result = await syncPlaylists();
+  return { success: true, data: result };
+} catch (error) {
+  return {
+    success: false,
+    error: error.message,
+    timestamp: new Date().toISOString()
+  };
+}
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>Best Practices</h2>
+                <div class="success">
+                    ✅ <strong>Immer bidirektional testen</strong> - Teste beide Richtungen
+                </div>
+                <div class="success">
+                    ✅ <strong>Batch-Limits beachten</strong> - Max 100 Tracks pro Add-Request
+                </div>
+                <div class="success">
+                    ✅ <strong>Logging aktivieren</strong> - Debug-Ausgaben speichern
+                </div>
+                <div class="danger">
+                    ❌ <strong>Rate Limiting</strong> - Spotify hat API-Limits, nicht zu oft aufrufen
+                </div>
+                <div class="danger">
+                    ❌ <strong>Authentifizierung abgelaufen</strong> - Token regelmäßig erneuern
+                </div>
+            </div>
+        </div>
+
+        <!-- TROUBLESHOOTING TAB -->
+        <div id="troubleshooting" class="tab-content">
+            <div class="section">
+                <h2>Häufige Fehler</h2>
+
+                <h3>❌ "Invalid Spotify ID"</h3>
+                <p><strong>Problem:</strong> Die Playlist ID ist falsch</p>
+                <p><strong>Lösung:</strong></p>
+                <ul>
+                    <li>Playlist Link erneut kopieren: spotify.com/playlist/<strong>ID</strong></li>
+                    <li>Sicherstellen, dass nur die ID kopiert wird (keine Query-Parameter)</li>
+                    <li>ID nicht URL-kodiert - nur alphanumerisch und Bindestriche</li>
+                </ul>
+
+                <h3>❌ "Insufficient permissions"</h3>
+                <p><strong>Problem:</strong> Scopes nicht richtig gesetzt</p>
+                <p><strong>Lösung:</strong></p>
+                <ul>
+                    <li>Credentials löschen und neu erstellen</li>
+                    <li>Scopes überprüfen: playlist-modify-public, playlist-modify-private</li>
+                    <li>OAuth Redirect URI in Spotify App korrekt?</li>
+                </ul>
+
+                <h3>❌ "Token expired"</h3>
+                <p><strong>Problem:</strong> OAuth Token ist abgelaufen</p>
+                <p><strong>Lösung:</strong></p>
+                <ul>
+                    <li>Credentials neu authentifizieren</li>
+                    <li>"Reconnect" Button in Credentials klicken</li>
+                    <li>n8n aktualisieren (falls n8n veraltet)</li>
+                </ul>
+
+                <h3>❌ "Rate limit exceeded"</h3>
+                <p><strong>Problem:</strong> Zu viele API Requests</p>
+                <p><strong>Lösung:</strong></p>
+                <ul>
+                    <li>Wait Node zwischen Requests einfügen (1-2 Sekunden)</li>
+                    <li>Batch Size reduzieren</li>
+                    <li>Execution Schedule drosseln</li>
+                </ul>
+
+                <h3>❌ "Empty playlist returned"</h3>
+                <p><strong>Problem:</strong> Playlist ist leer oder hat <100 Tracks</p>
+                <p><strong>Lösung:</strong></p>
+                <ul>
+                    <li>"Get all" Checkbox in Spotify Node überprüfen</li>
+                    <li>Response in n8n Inspector prüfen</li>
+                    <li>Limit auf 50 erhöhen, wenn mehr Tracks vorhanden</li>
+                </ul>
+            </div>
+
+            <div class="section">
+                <h2>Debugging Tipps</h2>
+                <div class="step">
+                    <strong>1. Inspector nutzen:</strong> Jeder Node zeigt seinen Output in der Seiteleiste
+                </div>
+                <div class="step">
+                    <strong>2. Console.log nutzen:</strong> Code Nodes debuggen mit console
+                </div>
+                <div class="step">
+                    <strong>3. Test Workflow:</strong> Mit wenigen Tracks starten (kleinen Test-Playlisten)
+                </div>
+                <div class="step">
+                    <strong>4. Execution Logs:</strong> Workflow ausführen und Logs checken
+                </div>
+                <div class="step">
+                    <strong>5. Spotify Developer Console:</strong> API direkter testen
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>Spotify API Limits</h2>
+                <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+                    <tr style="border-bottom: 1px solid var(--color-border);">
+                        <th style="text-align: left; padding: 10px; color: var(--color-primary);">Limit</th>
+                        <th style="text-align: left; padding: 10px; color: var(--color-primary);">Wert</th>
+                    </tr>
+                    <tr style="border-bottom: 1px solid var(--color-border);">
+                        <td style="padding: 10px;">Max Tracks pro Add Request</td>
+                        <td style="padding: 10px;">100 URIs</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid var(--color-border);">
+                        <td style="padding: 10px;">Max Items pro Get Request</td>
+                        <td style="padding: 10px;">50 (Standard)</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid var(--color-border);">
+                        <td style="padding: 10px;">Rate Limit</td>
+                        <td style="padding: 10px;">429 Too Many Requests</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 10px;">Token Gültigkeit</td>
+                        <td style="padding: 10px;">1 Stunde</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function switchTab(tabName) {
+            // Hide all tab contents
+            const contents = document.querySelectorAll('.tab-content');
+            contents.forEach(content => content.classList.remove('active'));
+
+            // Remove active class from all buttons
+            const buttons = document.querySelectorAll('.tab-button');
+            buttons.forEach(button => button.classList.remove('active'));
+
+            // Show selected tab content
+            document.getElementById(tabName).classList.add('active');
+
+            // Add active class to clicked button
+            event.target.classList.add('active');
+        }
+    </script>
+</body>
+</html>
