@@ -1,0 +1,180 @@
+{
+  "name": "Spotify Playlist Sync Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -672,
+        0
+      ],
+      "id": "e6a040b5-b385-49d0-83f9-a7a1aa9551c4",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "resource": "library",
+        "returnAll": true
+      },
+      "type": "n8n-nodes-base.spotify",
+      "typeVersion": 1,
+      "position": [
+        -480,
+        -112
+      ],
+      "id": "d796aa79-2cf0-4afa-8c56-82fbab8cb933",
+      "name": "Get liked tracks",
+      "credentials": {
+        "spotifyOAuth2Api": {
+          "id": "YOUR_SPOTIFY_CREDENTIAL_ID",
+          "name": "Spotify account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const allItems = $input.all();\n\nconsole.log(\"Total items:\", allItems.length);\n\n// Die Merge Node kombiniert ALLE Items in einer Liste\n// Du musst die Hälfte teilen basierend auf der Quelle\n\n// Schau auf die added_at Felder um zu erkennen welche woher kommen\nconst playlist1Items = [];\nconst playlist2Items = [];\n\n// ODER simpler: Manuell splitten basierend auf Index\n// Erste 124 = Playlist 1\n// Nächste 137 = Playlist 2\n\nconst split1 = 124;  // HIER: Anzahl Playlist 1 Tracks anpassen\nconst split2 = 137;  // HIER: Anzahl Playlist 2 Tracks anpassen\n\nconst p1Items = allItems.slice(0, split1);\nconst p2Items = allItems.slice(split1);\n\nconsole.log(\"P1 Items:\", p1Items.length);\nconsole.log(\"P2 Items:\", p2Items.length);\n\n// Extract URIs - Die Items haben track.uri !\nconst p1URIs = p1Items\n  .map(item => item?.json?.track?.uri)\n  .filter(Boolean);\n\nconst p2URIs = p2Items\n  .map(item => item?.json?.track?.uri)\n  .filter(Boolean);\n\nconsole.log(\"P1 URIs extracted:\", p1URIs.length);\nconsole.log(\"P2 URIs extracted:\", p2URIs.length);\nconsole.log(\"Sample P1 URI:\", p1URIs[0]);\nconsole.log(\"Sample P2 URI:\", p2URIs[0]);\n\n// Find tracks to add\nconst tracksToAddToP2 = p1URIs.filter(uri => !p2URIs.includes(uri));\nconst tracksToAddToP1 = p2URIs.filter(uri => !p1URIs.includes(uri));\n\nreturn {\n  tracksToAddToP2: tracksToAddToP2,\n  tracksToAddToP1: tracksToAddToP1,\n  syncStatus: {\n    p1Total: p1URIs.length,\n    p2Total: p2URIs.length,\n    newForP2: tracksToAddToP2.length,\n    newForP1: tracksToAddToP1.length\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        32,
+        -16
+      ],
+      "id": "8f5eeafe-518c-4129-b295-f9440f82b95e",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "resource": "playlist",
+        "operation": "getTracks",
+        "id": "YOUR_PLAYLIST_1_ID",
+        "returnAll": true
+      },
+      "type": "n8n-nodes-base.spotify",
+      "typeVersion": 1,
+      "position": [
+        -480,
+        144
+      ],
+      "id": "46bf0aec-c1c8-4eaf-89cf-e30a7ce5851f",
+      "name": "Get a playlist's tracks by URI or ID",
+      "credentials": {
+        "spotifyOAuth2Api": {
+          "id": "YOUR_SPOTIFY_CREDENTIAL_ID",
+          "name": "Spotify account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -176,
+        -16
+      ],
+      "id": "0c636aed-0113-4232-a60c-2d6685edfe0e",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "resource": "playlist",
+        "id": "YOUR_PLAYLIST_2_ID",
+        "trackID": "={{ $json.tracksToAddToP2[0] }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.spotify",
+      "typeVersion": 1,
+      "position": [
+        272,
+        -16
+      ],
+      "id": "0185b358-ef48-46b0-a2eb-9b384ce13df3",
+      "name": "Add an Item to a playlist",
+      "credentials": {
+        "spotifyOAuth2Api": {
+          "id": "YOUR_SPOTIFY_CREDENTIAL_ID",
+          "name": "Spotify account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get liked tracks",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get a playlist's tracks by URI or ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get liked tracks": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a playlist's tracks by URI or ID": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Add an Item to a playlist",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": ["spotify", "playlist", "sync"]
+}
