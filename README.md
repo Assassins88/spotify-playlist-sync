@@ -20,6 +20,10 @@ https://raw.githubusercontent.com/Assassins88/spotify-playlist-sync/main/spotify
 
 ### Option 2: Direkter Import
 Klick hier um den Workflow zu importieren:
+
+[![Import to n8n](https://img.shields.io/badge/Import%20to-n8n-red?style=for-the-badge)](https://app.n8n.io/workflows?import=https://raw.githubusercontent.com/Assassins88/spotify-playlist-sync/main/spotify-playlist-sync.workflow.json)
+
+
 ```
 https://app.n8n.io/workflows?import=https://raw.githubusercontent.com/Assassins88/spotify-playlist-sync/main/spotify-playlist-sync.workflow.json
 ```
